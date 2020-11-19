@@ -1,0 +1,146 @@
+/*
+ Got this from: https://codepen.io/samuelkraft/pen/Farhl
+*/
+
+
+@use postcss-nested;
+body {
+	font-family: "Helvetica Neue", Helvetica, sans-serif;
+	font-size: 20px;
+	font-weight: normal;
+  max-width: 450px;
+	margin: 50px auto;
+  display: flex;
+  flex-direction: column;
+}
+
+p {
+  max-width: 255px;
+  word-wrap: break-word;
+  margin-bottom: 12px;
+  line-height: 24px;
+  position:relative;
+	padding:10px 20px;
+  border-radius:25px;
+  
+  &:before, &:after {
+    content:"";
+		position:absolute;
+    bottom:-2px;
+    height:20px;
+  }
+}
+
+.from-me {
+	color:white; 
+	background:#0B93F6;
+	align-self: flex-end;
+		
+	&:before {
+		right:-7px;
+		border-right:20px solid #0B93F6;
+		border-bottom-left-radius: 16px 14px;
+		transform:translate(0, -2px);
+	}
+
+	&:after {
+		right:-56px;
+		width:26px;
+		background:white;
+		border-bottom-left-radius: 10px;
+		transform:translate(-30px, -2px);
+	}
+}
+
+.from-them {
+	background:#E5E5EA;
+	color:black;
+		
+	&:before {
+		left:-7px;
+		border-left:20px solid #E5E5EA;
+		border-bottom-right-radius: 16px 14px;
+		transform:translate(0, -2px);
+	}
+
+	&:after {
+		left:4px;
+		width:26px;
+		background:white;
+		border-bottom-right-radius: 10px;
+		transform:translate(-30px, -2px);
+	}
+}
+
+
+
+
+
+
+
+
+
+
+
+/*
+ Got this from: https://codepen.io/swards/pen/gxQmbj
+*/
+
+body {
+  font-family: helvetica;
+  display: flex ;
+  flex-direction: column;
+  align-items: center;
+}
+
+.chat {
+  width: 600px;
+  border: solid 1px #EEE;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+}
+
+.messages {
+  margin-top: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+.message {
+  border-radius: 20px;
+  padding: 8px 15px;
+  margin-top: 5px;
+  margin-bottom: 5px;
+  display: inline-block;
+}
+
+.message-date {
+    font-size: 10px;
+    color: black;
+}
+
+.message-date.me { text-align: right; }
+.message-date.them { text-align: left; }
+
+.call-date {
+    font-size: 10px;
+    color: black;
+    text-align: center;
+}
+
+.call {
+    border-radius: 20px;
+    padding: 8px 15px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    display: inline-block;
+    background-color: #D3D3D3;
+    
+    text-align: center;
+    font-size: 14px;
+}
+
+.missed-call {
+    color: red;
+}
