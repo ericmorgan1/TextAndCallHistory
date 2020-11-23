@@ -6,6 +6,7 @@ import time
 CALL_HISTORY_FILE_NAME = "call-history.csv"
 TEXT_HISTORY_FILE_NAME = "text-messages.txt"
 PHONE_NUMBER = ""
+TEXT_SENDER_NAME = ""
 OUTPUT_FILE = "timeline/timeline.html"
 
 ###
@@ -13,9 +14,9 @@ OUTPUT_FILE = "timeline/timeline.html"
 ###
 
 class CommunicationEvent:
-    def __init__(self):
-        self.Type = -1     # 1 = Phone, 2 = Text Message
-        self.DateTime = 0
+    def __init__(self, eventType, dateTime):
+        self.Type = eventType     # 1 = Phone, 2 = Text Message
+        self.DateTime = dateTime
 
         # Phone data...
         self.PhoneContactName = ""
@@ -69,10 +70,7 @@ def parsePhoneCallFile(fileName,phoneNumberToFilter):
 
 # Parses a CSV line from a phone call log and returns a CommunicationEvent
 def parsePhoneCallLine(row):
-    event = CommunicationEvent()
-    event.Type = 1
-    event.DateTime = parsePhoneCallDate(row[2]);
-    
+    event = CommunicationEvent(1, parsePhoneCallDate(row[2]))    
     event.PhoneContactName = row[0].strip()
     event.PhoneNumber = row[1]
     event.PhoneDurationSeconds = convertDurationStringToSeconds(row[3])
@@ -82,7 +80,9 @@ def parsePhoneCallLine(row):
 # Parses the date string from a phone call into a datetime object...
 def parsePhoneCallDate(sDate):
     sDate = sDate.split(".")[0] # Strip off milliseconds
-    return datetime.datetime.strptime(sDate, "%Y-%m-%dT%H:%M:%S")
+    dOrig = datetime.datetime.strptime(sDate, "%Y-%m-%dT%H:%M:%S")
+    dAdj = dOrig + datetime.timedelta(hours = -6)   # Adjust for Central time
+    return dAdj
 
 ##############################
 # TEXT MESSAGE FUNCTIONS
@@ -110,8 +110,6 @@ def parseTextMessageFileIntoLines(fileName):
     lines = []
     currentLine = ""
     for line in file:
-        #line = line.encode('unicode-escape').decode('utf-8')    # TODO: Not sure about this one?
-        
         if line.startswith("["):
             if (len(currentLine) > 0): lines.append(currentLine)
             currentLine = line
@@ -121,14 +119,19 @@ def parseTextMessageFileIntoLines(fileName):
 
 # Parses a text line from a text message log and returns a CommunicationEvent
 def parseTextMessageLine(line):
+
+    # Sometimes messages appear like "Me: " and sometimes like "Me : ". So try both ways.
+    cIndex = 0; cSkipAmount = 0
+    if (" : " in line): cIndex = line.index(" : "); cSkipAmount = 2
+    elif (": " in line): cIndex = line.index(": "); cSkipAmount = 3
+
+    # Gather data...
     sDateTime = line[line.index("[")+1 : line.index("]")]
-    contents = line[line.index(" : ")+3 :]
-    sender = line[line.index("] ")+2 : line.index(" : ")]
+    contents = line[cIndex+cSkipAmount:]
+    sender = line[line.index("] ")+2 : cIndex]
 
-    event = CommunicationEvent()
-    event.Type = 2
-    event.DateTime = parseTextMessageDate(sDateTime);
-
+    # Create the event...
+    event = CommunicationEvent(2, parseTextMessageDate(sDateTime))
     event.TextSenderName = sender
     event.TextContents = contents
     return event
@@ -142,13 +145,21 @@ def parseTextMessageDate(sDate):
 ##############################
 
 # Generates the full HTML for all the events...
-def genHTMLForEvents(events):
+def genHTMLForEvents(events, textSenderName):
     html = genHTMLStartFile()
     
     html += '<div class="chat">'
+
+    currentDay = 0; currentMonth = 0;
     for event in events:
+        # If we are on a new month/day, print out the day and update
+        if (event.DateTime.day != currentDay or event.DateTime.month != currentMonth):
+            html += '<span class="new-day">{0}</span>'.format(event.DateTime.strftime("%A, %b %d, %Y"))
+            currentDay = event.DateTime.day
+            currentMonth = event.DateTime.month
+        
         if (event.Type == 1): html += genHTMLForPhoneEvent(event)
-        elif (event.Type == 2): html += genHTMLForTextEvent(event)
+        elif (event.Type == 2): html += genHTMLForTextEvent(event, textSenderName)
     html += '</div>'
     
     html += genHTMLEndFile()
@@ -184,24 +195,23 @@ def genHTMLForPhoneEvent(phoneEvent):
     html = '<div class="' + className + '">'
     html += '<i class="' + iconName + '"></i>'
     html += '<span> {0}; Duration: {1:3.1f} minutes</span>'.format(callType, durationMinutes)
+    html += '<div class="call-date">{0}; {1}</div>'.format(phoneEvent.PhoneNumber, phoneEvent.PhoneContactName)
     html += '<div class="call-date">' + date + '</div>'
-    html += '</div>'
+    html += '</div>'    
     return html
 
 # Generates HTML for a single Text Message CommuncationEvent
-def genHTMLForTextEvent(textEvent):
-    className = "from-me" if (textEvent.TextSenderName == "Me") else "from-them"
-    timeClassName = "message-date me" if (textEvent.TextSenderName == "Me") else "message-date them"
+def genHTMLForTextEvent(textEvent, senderName):
+    # Since client's messages can come from various names, it's easier to calculate when it's NOT from them
+    # So if a message comes from <senderName> then consider it a received text. Otherwise, no matter what the name is, say it came from client.
+    notFromMe = (textEvent.TextSenderName == senderName)
+    className = "from-them" if (notFromMe) else "from-me"
+    timeClassName = "message-date them" if (notFromMe) else "message-date me"
     contents = textEvent.TextContents
     date = textEvent.DateTime.strftime("%b %d, %Y, %I:%M %p")
 
     html = '<p class="{0}">{1}</p>'.format(className, contents)
     html += '<span class="{0}">{1}</span>'.format(timeClassName, date)
-    
-    #html = '<div class="' + className + '">'
-    #html += '<div class="message last">' + contents + '</div>'
-    #html += '<span class="message-date">' + date + '</span>'
-    #html += '</div>'
     return html
 
 ##############################
@@ -240,11 +250,9 @@ allEvents.sort(key = lambda x: x.DateTime)
 printDailyPhoneCallTable(phoneEvents)
 
 # Generate the HTML and write to a file...
-html = genHTMLForEvents(allEvents)
+html = genHTMLForEvents(allEvents, TEXT_SENDER_NAME)
 with open(OUTPUT_FILE, "w+", encoding="utf8") as outputFile:
     data = outputFile.read()
     outputFile.seek(0)
     outputFile.write(html)
     outputFile.truncate()
-    
-            
