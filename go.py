@@ -209,8 +209,10 @@ def genHTMLForTextEvent(textEvent, senderName):
     timeClassName = "message-date them" if (notFromMe) else "message-date me"
     contents = textEvent.TextContents
     date = textEvent.DateTime.strftime("%b %d, %Y, %I:%M %p")
+    senderName = textEvent.TextSenderName
 
     html = '<p class="{0}">{1}</p>'.format(className, contents)
+    html += '<span class="{0}">{1}</span>'.format(timeClassName, textSenderName)
     html += '<span class="{0}">{1}</span>'.format(timeClassName, date)
     return html
 
