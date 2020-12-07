@@ -123,7 +123,7 @@ def parseTextMessageLine(line):
     # Sometimes messages appear like "Me: " and sometimes like "Me : ". So try both ways.
     cIndex = 0; cSkipAmount = 0
     if (" : " in line): cIndex = line.index(" : "); cSkipAmount = 2
-    elif (": " in line): cIndex = line.index(": "); cSkipAmount = 3
+    elif (": " in line): cIndex = line.index(": "); cSkipAmount = 2
 
     # Gather data...
     sDateTime = line[line.index("[")+1 : line.index("]")]
