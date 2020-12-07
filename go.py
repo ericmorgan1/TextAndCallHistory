@@ -212,7 +212,7 @@ def genHTMLForTextEvent(textEvent, senderName):
     senderName = textEvent.TextSenderName
 
     html = '<p class="{0}">{1}</p>'.format(className, contents)
-    html += '<span class="{0}">{1}</span>'.format(timeClassName, textSenderName)
+    html += '<span class="{0}">{1}</span>'.format(timeClassName, senderName)
     html += '<span class="{0}">{1}</span>'.format(timeClassName, date)
     return html
 
